@@ -1,4 +1,4 @@
-package com.example.SpringAiRagApp.Enums;
+package com.example.SpringAiRagApp.enums;
 
 public enum DocumentStatus {
     PENDING,
