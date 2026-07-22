@@ -1,6 +1,6 @@
 package com.example.SpringAiRagApp.model;
 
-import com.example.SpringAiRagApp.Enums.DocumentStatus;
+import com.example.SpringAiRagApp.enums.DocumentStatus;
 import jakarta.persistence.*;
 
 import java.time.LocalDateTime;
@@ -30,6 +30,10 @@ public class Document {
         return id;
     }
 
+    public String getFilename(){
+        return filename;
+    }
+
     public DocumentStatus getStatus() {
         return status;
     }
@@ -38,7 +42,15 @@ public class Document {
         return totalChunks;
     }
 
+    public LocalDateTime getUploadedAt(){
+        return uploadedAt;
+    }
+
 // Setters
+
+    public void setFilename(String filename) {
+        this.filename = filename;
+    }
 
     public void setId(UUID id) {
         this.id = id;
@@ -51,4 +63,9 @@ public class Document {
     public void setTotalChunks(Integer totalChunks) {
         this.totalChunks = totalChunks;
     }
+
+    public void setUploadedAt(LocalDateTime uploadedAt) {
+        this.uploadedAt = uploadedAt;
+    }
+
 }
