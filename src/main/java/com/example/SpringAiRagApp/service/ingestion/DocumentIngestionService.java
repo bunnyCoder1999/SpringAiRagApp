@@ -15,6 +15,8 @@ import org.springframework.web.multipart.MultipartFile;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+
 import org.slf4j.Logger;
 
 @Service
@@ -56,8 +58,6 @@ public class DocumentIngestionService {
             List<org.springframework.ai.document.Document> chunks = documentChunker.chunk(parsedDocs);
             chunks = metaDataEnricher.enrich(chunks, fileName, doc.getId());
 
-            vectorStore.add(chunks);
-            log.info("Document '{}' ingested successfully with {} chunks", doc.getFilename(), doc.getTotalChunks());
 
             List<DocumentChunk> chunkEntities = new ArrayList<>();
             for(int i = 0; i < chunks.size(); i++){
@@ -70,6 +70,18 @@ public class DocumentIngestionService {
                 chunkEntities.add(entity);
             }
             documentChunkRepository.saveAll(chunkEntities);
+
+            // --- NEW: replace null metadata values for vector store compatibility ---
+            for (org.springframework.ai.document.Document chunk : chunks) {
+                for (Map.Entry<String, Object> entry : chunk.getMetadata().entrySet()) {
+                    if (entry.getValue() == null) {
+                        entry.setValue("N/A");
+                    }
+                }
+            }
+
+            vectorStore.add(chunks);
+            log.info("Document '{}' ingested successfully with {} chunks", doc.getFilename(), doc.getTotalChunks());
 
             doc.setStatus(DocumentStatus.INDEXED);
             doc.setTotalChunks(chunks.size());

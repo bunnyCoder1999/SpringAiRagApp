@@ -6,6 +6,7 @@ import com.example.SpringAiRagApp.service.search.SemanticSearchService;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.document.Document;
 import org.springframework.core.io.ResourceLoader;
+import org.springframework.stereotype.Service;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
@@ -13,6 +14,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.stream.Collectors;
 
+@Service
 public class RagChatService {
     private final SemanticSearchService searchService;
     private final ChatClient chatClient;
