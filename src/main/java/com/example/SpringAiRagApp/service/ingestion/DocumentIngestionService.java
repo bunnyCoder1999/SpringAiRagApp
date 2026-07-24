@@ -7,6 +7,7 @@ import com.example.SpringAiRagApp.model.DocumentChunk;
 import com.example.SpringAiRagApp.repositories.DocumentChunkRepository;
 import com.example.SpringAiRagApp.repositories.DocumentRepository;
 import jakarta.transaction.Transactional;
+import org.slf4j.LoggerFactory;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -14,6 +15,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import org.slf4j.Logger;
 
 @Service
 public class DocumentIngestionService {
@@ -23,6 +25,7 @@ public class DocumentIngestionService {
     private final DocumentChunker documentChunker;
     private final MetaDataEnricher metaDataEnricher;
     private final VectorStore vectorStore;
+    private final Logger log = LoggerFactory.getLogger(DocumentIngestionService.class);
 
     public DocumentIngestionService(DocumentRepository documentRepository,
                                     DocumentChunkRepository documentChunkRepository,
@@ -54,6 +57,7 @@ public class DocumentIngestionService {
             chunks = metaDataEnricher.enrich(chunks, fileName, doc.getId());
 
             vectorStore.add(chunks);
+            log.info("Document '{}' ingested successfully with {} chunks", doc.getFilename(), doc.getTotalChunks());
 
             List<DocumentChunk> chunkEntities = new ArrayList<>();
             for(int i = 0; i < chunks.size(); i++){

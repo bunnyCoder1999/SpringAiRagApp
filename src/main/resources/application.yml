@@ -2,8 +2,12 @@ spring:
   application:
     name: SpringAiRagApp
 
+  sql:
+    init:
+      mode: always
+
   datasource:
-    url: jdbc:postgresql://localhost:5432/ragdb
+    url: jdbc:postgresql://localhost:5433/ragdb
     username: postgres
     password: 123456
     driver-class-name: org.postgresql.Driver
@@ -31,3 +35,4 @@ spring:
         index-type: HNSW
         distance-type: COSINE_DISTANCE
         remove-existing-vector-store-table: false
+        initialize-schema: true
