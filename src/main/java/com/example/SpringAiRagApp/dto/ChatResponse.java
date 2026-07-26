@@ -4,6 +4,7 @@ import java.util.List;
 
 public record ChatResponse(
         String answer,
-        List<Citation> sources
+        List<Citation> sources,
+        String sessionId
 ) {
 }

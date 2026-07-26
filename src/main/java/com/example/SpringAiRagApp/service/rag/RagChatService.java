@@ -6,6 +6,8 @@ import com.example.SpringAiRagApp.service.search.SemanticSearchService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
+import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.ai.document.Document;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.stereotype.Service;
@@ -14,25 +16,34 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
 public class RagChatService {
     private final SemanticSearchService searchService;
-    private final ChatClient chatClient;
+    private final ChatClient.Builder chatClientBuilder;
+    private final ChatMemory chatMemory;
     private final ResourceLoader resourceLoader;
     private final Logger log = LoggerFactory.getLogger(RagChatService.class);
 
     public RagChatService(SemanticSearchService searchService,
                           ChatClient.Builder chatClientBuilder,
-                          ResourceLoader resourceLoader){
+                          ChatMemory chatMemory,
+                          ResourceLoader resourceLoader) {
         this.searchService = searchService;
-        this.chatClient = chatClientBuilder.build();
+        this.chatClientBuilder = chatClientBuilder;
+        this.chatMemory = chatMemory;
         this.resourceLoader = resourceLoader;
     }
 
-    public ChatResponse ask(String question){
+    public ChatResponse ask(String question, String sessionId) {
         log.info("Received question: '{}'", question);
+
+        if (sessionId == null || sessionId.isBlank()) {
+            sessionId = UUID.randomUUID().toString();
+        }
+
         List<Document> chunks = searchService.search(question);
         log.info("Found {} relevant chunks", chunks.size());
 
@@ -52,13 +63,18 @@ public class RagChatService {
         String systemPrompt = loadPromptTemplate()
                 .replace("{context}", context);
 
-        String answer = chatClient.prompt()
+        ChatClient sessionClient = chatClientBuilder
+                .defaultAdvisors(new MessageChatMemoryAdvisor(chatMemory, sessionId, 10))
+                .build();
+
+        String answer = sessionClient.prompt()
                 .system(systemPrompt)
                 .user(question)
                 .call()
                 .content();
+
         log.info("Answer generated for question '{}' with {} sources", question, citations);
-        return new ChatResponse(answer, citations);
+        return new ChatResponse(answer, citations, sessionId);
     }
 
     private String loadPromptTemplate() {

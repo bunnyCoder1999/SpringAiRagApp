@@ -21,11 +21,12 @@ public class ChatController {
     @PostMapping("/ask")
     public ResponseEntity<ChatResponse> askQuestion (@RequestBody Map<String, String> request){
         String question = request.get("question");
+        String sessionId = request.get("sessionId");
         if(question == null || question.isBlank()){
             return ResponseEntity.badRequest().build();
         }
 
-        ChatResponse response = chatService.ask(question);
+        ChatResponse response = chatService.ask(question, sessionId);
         return ResponseEntity.ok(response);
     }
 }
