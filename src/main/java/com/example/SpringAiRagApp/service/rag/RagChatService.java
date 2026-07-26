@@ -3,6 +3,8 @@ package com.example.SpringAiRagApp.service.rag;
 import com.example.SpringAiRagApp.dto.ChatResponse;
 import com.example.SpringAiRagApp.dto.Citation;
 import com.example.SpringAiRagApp.service.search.SemanticSearchService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.document.Document;
 import org.springframework.core.io.ResourceLoader;
@@ -19,6 +21,7 @@ public class RagChatService {
     private final SemanticSearchService searchService;
     private final ChatClient chatClient;
     private final ResourceLoader resourceLoader;
+    private final Logger log = LoggerFactory.getLogger(RagChatService.class);
 
     public RagChatService(SemanticSearchService searchService,
                           ChatClient.Builder chatClientBuilder,
@@ -29,7 +32,9 @@ public class RagChatService {
     }
 
     public ChatResponse ask(String question){
+        log.info("Received question: '{}'", question);
         List<Document> chunks = searchService.search(question);
+        log.info("Found {} relevant chunks", chunks.size());
 
         String context = chunks.stream()
                 .map(Document::getText)
@@ -52,7 +57,7 @@ public class RagChatService {
                 .user(question)
                 .call()
                 .content();
-
+        log.info("Answer generated for question '{}' with {} sources", question, citations);
         return new ChatResponse(answer, citations);
     }
 
