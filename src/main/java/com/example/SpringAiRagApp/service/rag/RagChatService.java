@@ -11,6 +11,7 @@ import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.ai.document.Document;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.stereotype.Service;
+import reactor.core.publisher.Flux;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
@@ -87,5 +88,44 @@ public class RagChatService {
         } catch (Exception e) {
             throw new RuntimeException("Failed to load prompt template", e);
         }
+    }
+
+    public Flux<String> askStream (String question, String sessionId){
+        log.info("Received question: '{}'", question);
+
+        if(sessionId == null || sessionId.isBlank()){
+            sessionId = UUID.randomUUID().toString();
+        }
+
+        List<Document> chunks = searchService.search(question);
+        log.info("Found {} relevant chunks", chunks.size());
+
+        String context = chunks.stream()
+                .map(Document::getText)
+                .collect(Collectors.joining("\n\n---\n\n"));
+
+        List<Citation> citations = chunks.stream()
+                    .map(chunk -> new Citation(
+                    String.valueOf(chunk.getMetadata().get("source")),
+                    chunk.getMetadata().get("page_number"),
+                    chunk.getMetadata().get("chunk_index")
+                ))
+                .distinct()
+                .toList();
+
+        String systemPrompt = loadPromptTemplate()
+                .replace("{context}" , context);
+
+        ChatClient sessionClient = chatClientBuilder
+                .defaultAdvisors(new MessageChatMemoryAdvisor(chatMemory, sessionId, 10))
+                .build();
+
+        Flux<String> stream = sessionClient.prompt()
+                .system(systemPrompt)
+                .user(question)
+                .stream()
+                .content();
+        log.info("Answer generated for question '{}' with {} sources", question, citations);
+        return stream;
     }
 }
