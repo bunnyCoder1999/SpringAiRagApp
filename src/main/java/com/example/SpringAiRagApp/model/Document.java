@@ -4,6 +4,7 @@ import com.example.SpringAiRagApp.enums.DocumentStatus;
 import jakarta.persistence.*;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 
 @Table(name = "documents")
@@ -23,6 +24,9 @@ public class Document {
     private LocalDateTime uploadedAt;
 
     private Integer totalChunks;
+
+    @OneToMany(mappedBy = "document", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<DocumentChunk> chunks;
 
  // Getters
 
