@@ -9,13 +9,12 @@ import com.example.SpringAiRagApp.repositories.DocumentRepository;
 import jakarta.transaction.Transactional;
 import org.slf4j.LoggerFactory;
 import org.springframework.ai.vectorstore.VectorStore;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import org.slf4j.Logger;
 
@@ -28,19 +27,22 @@ public class DocumentIngestionService {
     private final MetaDataEnricher metaDataEnricher;
     private final VectorStore vectorStore;
     private final Logger log = LoggerFactory.getLogger(DocumentIngestionService.class);
+    private final JdbcTemplate jdbcTemplate;
 
     public DocumentIngestionService(DocumentRepository documentRepository,
                                     DocumentChunkRepository documentChunkRepository,
                                     DocumentParser documentParser,
                                     DocumentChunker documentChunker,
                                     MetaDataEnricher metaDataEnricher,
-                                    VectorStore vectorStore) {
+                                    VectorStore vectorStore,
+                                    JdbcTemplate jdbcTemplate) {
         this.documentChunkRepository = documentChunkRepository;
         this.documentRepository = documentRepository;
         this.documentParser = documentParser;
         this.documentChunker = documentChunker;
         this.metaDataEnricher = metaDataEnricher;
         this.vectorStore = vectorStore;
+        this.jdbcTemplate = jdbcTemplate;
     }
 
     @Transactional
@@ -101,5 +103,25 @@ public class DocumentIngestionService {
             throw new RuntimeException("Ingestion failed for file: " + doc.getFilename(), e);
         }
 
+    }
+
+    @Transactional
+    public void deleteDocument(UUID docId) {
+        jdbcTemplate.update("DELETE FROM vector_store WHERE metadata->>'doc_id' = ?", docId.toString());
+        documentRepository.deleteById(docId);
+        log.info("Successfully deleted document id: " + docId);
+    }
+
+    @Transactional
+    public List<Document> fetchAllDocuments(){
+        List<Document> documents = documentRepository.findAll();
+        log.info("Successfully fetched all documents");
+        return documents;
+    }
+
+    public Optional<Document> fetchDocumentById(UUID docId){
+        Optional<Document> document = documentRepository.findById(docId);
+        log.info("Successfully fetched document: " + docId);
+        return document;
     }
 }
